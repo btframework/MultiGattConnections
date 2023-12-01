@@ -5,7 +5,7 @@ using wclCommon;
 using wclCommunication;
 using wclBluetooth;
 
-namespace MultyGatt
+namespace MultiGatt
 {
     internal delegate void ClientConnectionCompleted(Int64 Address, Int32 Result);
     internal delegate void ClientConnectionStarted(Int64 Address, Int32 Result);

@@ -1,4 +1,4 @@
-﻿namespace MultyGatt
+﻿namespace MultiGatt
 {
     partial class fmMain
     {

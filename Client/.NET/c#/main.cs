@@ -5,7 +5,7 @@ using System.Windows.Forms;
 using wclCommon;
 using wclBluetooth;
 
-namespace MultyGatt
+namespace MultiGatt
 {
     public partial class fmMain : Form
     {

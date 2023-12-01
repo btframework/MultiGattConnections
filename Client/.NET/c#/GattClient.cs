@@ -4,7 +4,7 @@ using wclCommon;
 using wclCommunication;
 using wclBluetooth;
 
-namespace MultyGatt
+namespace MultiGatt
 {
     internal sealed class GattClient : wclGattClient
     {

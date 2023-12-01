@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{BF475780-5BBF-4C9B-84EC-C671B3249DD6}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>MultyGatt</RootNamespace>
-    <AssemblyName>MultyGatt</AssemblyName>
+    <RootNamespace>MultiGatt</RootNamespace>
+    <AssemblyName>MultiGatt</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -39,13 +39,13 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="wclBluetoothFramework">
-      <HintPath>Lib\wclBluetoothFramework.dll</HintPath>
+      <HintPath>..\Lib\wclBluetoothFramework.dll</HintPath>
     </Reference>
     <Reference Include="wclCommon">
-      <HintPath>Lib\wclCommon.dll</HintPath>
+      <HintPath>..\Lib\wclCommon.dll</HintPath>
     </Reference>
     <Reference Include="wclCommunication">
-      <HintPath>Lib\wclCommunication.dll</HintPath>
+      <HintPath>..\Lib\wclCommunication.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -70,6 +70,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
