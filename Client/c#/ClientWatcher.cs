@@ -45,7 +45,7 @@ namespace MultyGatt
         }
         #endregion Helper method
 
-        #region Client event handlers.
+        #region Client event handlers
         private void ClientDisconnect(Object Sender, Int32 Reason)
         {
             GattClient Client = (GattClient)Sender;
@@ -93,7 +93,7 @@ namespace MultyGatt
             // Simple call the value changed event.
             DoValueChanged(Client.Address, Value);
         }
-        #endregion Client event handlers.
+        #endregion Client event handlers
 
         #region Events management
         private void DoClientDisconnected(Int64 Address, Int32 Reason)
