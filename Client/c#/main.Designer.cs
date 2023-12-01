@@ -78,6 +78,8 @@
             this.chAddress,
             this.chName,
             this.chStatus});
+            this.lvDevices.FullRowSelect = true;
+            this.lvDevices.GridLines = true;
             this.lvDevices.HideSelection = false;
             this.lvDevices.Location = new System.Drawing.Point(12, 41);
             this.lvDevices.MultiSelect = false;

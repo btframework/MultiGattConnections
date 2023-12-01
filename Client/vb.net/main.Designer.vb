@@ -40,6 +40,8 @@ Partial Class fmMain
         'lvDevices
         '
         Me.lvDevices.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.chAddress, Me.chName, Me.chStatus})
+        Me.lvDevices.FullRowSelect = True
+        Me.lvDevices.GridLines = True
         Me.lvDevices.HideSelection = False
         Me.lvDevices.Location = New System.Drawing.Point(12, 39)
         Me.lvDevices.MultiSelect = False
