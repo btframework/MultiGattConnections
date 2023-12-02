@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.456,=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.446,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\Unit1.pas=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\GettClient.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.421,C:\Users\mike\Documents\Embarcadero\Studio\Projects\Project1.dproj=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\MutliGatt.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.745,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\Unit1.pas=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\ClientWatcher.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.031,=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.716,C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.pas=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\main.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.664,=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.536,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\GettClient.pas=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\GattClient.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.716,C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.dfm=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\Delphi\main.dfm</Transaction>
+  </Transactions>
+</BorlandProject>

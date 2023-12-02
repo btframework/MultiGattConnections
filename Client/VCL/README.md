@@ -1,0 +1,1 @@
+Do not run this samples from IDE. Run it after build as common application. IDE debugger may block UI!
