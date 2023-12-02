@@ -143,6 +143,7 @@ begin
       Client.OnCharacteristicChanged := nil;
       Client.OnConnect := nil;
       Client.OnDisconnect := nil;
+
       FConnections.Remove(Client.Address);
     end;
 
