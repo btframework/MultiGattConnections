@@ -41,9 +41,6 @@ type
     {$REGION Helper method}
     procedure DestroyClient(const Client: TGattClient);
     procedure RemoveClient(const Client: TGattClient);
-
-    procedure ClearClients;
-    procedure ClearConnections;
     {$ENDREGION Helper method}
 
     {$REGION Client event handlers}
@@ -188,38 +185,6 @@ begin
         LeaveCriticalSection(FConnectionsCS);
       end;
     end;
-  end;
-end;
-
-procedure TClientWatcher.ClearClients;
-var
-  i: Integer;
-begin
-  EnterCriticalSection(FConnectionsCS);
-  try
-    if FClients.Count > 0 then begin
-      for i := 0 to FClients.Count - 1 do
-        FClients[i].Free;
-      FClients.Clear;
-    end;
-  finally
-    LeaveCriticalSection(FConnectionsCS);
-  end;
-end;
-
-procedure TClientWatcher.ClearConnections;
-var
-  Client: TGattClient;
-begin
-  EnterCriticalSection(FConnectionsCS);
-  try
-    if FConnections.Count > 0 then begin
-      for Client in FConnections.Values do
-        Client.Free;
-      FConnections.Clear;
-    end;
-  finally
-    LeaveCriticalSection(FConnectionsCS);
   end;
 end;
 
@@ -462,8 +427,8 @@ end;
 procedure TClientWatcher.DoStarted;
 begin
   // Clear all lists.
-  ClearClients;
-  ClearConnections;
+  FClients.Clear;
+  FConnections.Clear;
   FFoundDevices.Clear;
 
   inherited DoStarted;
@@ -492,6 +457,8 @@ begin
     for Client in Clients do
       Client.Disconnect;
   end;
+
+  Clients.Free;
 
   DestroyClient(nil);
 
