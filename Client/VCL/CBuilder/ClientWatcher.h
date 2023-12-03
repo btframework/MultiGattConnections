@@ -30,8 +30,8 @@ private:
 	typedef std::list<__int64> FOUND_DEVICES_LIST;
 
 	RTL_CRITICAL_SECTION		FConnectionsCS;
-	CLIENTS_LIST*				FClients; // Connected clients.
-	CLIENTS_LIST*				FConnections; // Pending connections.
+	CLIENTS_LIST*				FConnections;
+	CLIENTS_LIST*				FPendingConnections;
 	FOUND_DEVICES_LIST*			FFoundDevices;
 	TGattClient*				FTempClient; // Used to store client that must be destroyed.
 

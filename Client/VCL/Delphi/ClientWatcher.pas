@@ -24,8 +24,8 @@ type
   private
     {$REGION Connections management}
     FConnectionsCS: RTL_CRITICAL_SECTION;
-    FClients: TList<TGattClient>; // Connected clients.
-    FConnections: TDictionary<Int64, TGattClient>; // Pending connections.
+    FConnections: TList<TGattClient>; // Connected clients.
+    FPendingConnections: TDictionary<Int64, TGattClient>; // Pending connections.
     FFoundDevices: TList<Int64>;
     FTempClient: TGattClient; // Used to store client that must be destroyed.
     {$ENDREGION Connections management}
@@ -118,12 +118,12 @@ begin
   else begin
     EnterCriticalSection(FConnectionsCS);
     try
-      if not FConnections.ContainsKey(Address) then
+      if not FPendingConnections.ContainsKey(Address) then
         Result := WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
 
       else begin
-        Client := FConnections[Address];
-        if not FClients.Contains(Client) then
+        Client := FPendingConnections[Address];
+        if not FConnections.Contains(Client) then
           Result := WCL_E_CONNECTION_NOT_ACTIVE
         else
           Result := Client.ReadValue(Data);
@@ -139,17 +139,17 @@ begin
   EnterCriticalSection(FConnectionsCS);
   try
     // Remove client from the connections list.
-    if FConnections.ContainsKey(Client.Address) then begin
+    if FPendingConnections.ContainsKey(Client.Address) then begin
       Client.OnCharacteristicChanged := nil;
       Client.OnConnect := nil;
       Client.OnDisconnect := nil;
 
-      FConnections.Remove(Client.Address);
+      FPendingConnections.Remove(Client.Address);
     end;
 
     // Remove client from the clients list.
-    if FClients.Contains(Client) then
-      FClients.Remove(Client);
+    if FConnections.Contains(Client) then
+      FConnections.Remove(Client);
   finally
     LeaveCriticalSection(FConnectionsCS);
   end;
@@ -172,12 +172,12 @@ begin
     else begin
       EnterCriticalSection(FConnectionsCS);
       try
-        if not FConnections.ContainsKey(Address) then
+        if not FPendingConnections.ContainsKey(Address) then
           Result := WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
 
         else begin
-          Client := FConnections[Address];
-          if not FClients.Contains(Client) then
+          Client := FPendingConnections[Address];
+          if not FConnections.Contains(Client) then
             Result := WCL_E_CONNECTION_NOT_ACTIVE
           else
             Result := Client.WriteValue(Data);
@@ -227,7 +227,7 @@ begin
       // Othewrwise - add it to the connected clients list.
       EnterCriticalSection(FConnectionsCS);
       try
-        FClients.Add(Client);
+        FConnections.Add(Client);
       finally
         LeaveCriticalSection(FConnectionsCS);
       end;
@@ -259,8 +259,8 @@ begin
 
   InitializeCriticalSection(FConnectionsCS);
 
-  FClients := TList<TGattClient>.Create;
-  FConnections := TDictionary<Int64, TGattClient>.Create;
+  FConnections := TList<TGattClient>.Create;
+  FPendingConnections := TDictionary<Int64, TGattClient>.Create;
   FFoundDevices := TList<Int64>.Create;
 
   FTempClient := nil;
@@ -283,8 +283,8 @@ begin
   // Now we can destroy the objects.
   DeleteCriticalSection(FConnectionsCS);
 
-  FClients.Free;
   FConnections.Free;
+  FPendingConnections.Free;
   FFoundDevices.Free;
 
   // And now we are safe to call inherited destructor.
@@ -318,11 +318,11 @@ begin
 
     EnterCriticalSection(FConnectionsCS);
     try
-      if FConnections.ContainsKey(Address) then
-        Client := FConnections[Address];
+      if FPendingConnections.ContainsKey(Address) then
+        Client := FPendingConnections[Address];
 
       if Client <> nil then begin
-        if not FClients.Contains(Client) then
+        if not FConnections.Contains(Client) then
           Client := nil;
       end;
     finally
@@ -348,7 +348,7 @@ begin
     EnterCriticalSection(FConnectionsCS);
     try
       // Make sure that device is not in connections list.
-      if not FConnections.ContainsKey(Address) then begin
+      if not FPendingConnections.ContainsKey(Address) then begin
         // Make sure that we did not see this device early.
         if not FFoundDevices.Contains(Address) then begin
           // Check devices name.
@@ -378,7 +378,7 @@ begin
             // If connection started with success...
             if Result = WCL_E_SUCCESS then
               // ...add device to pending connections list.
-              FConnections.Add(Address, Client)
+              FPendingConnections.Add(Address, Client)
             else
               // Otherwise - destroy the object.
               Client.Free;
@@ -428,8 +428,8 @@ end;
 procedure TClientWatcher.DoStarted;
 begin
   // Clear all lists.
-  FClients.Clear;
   FConnections.Clear;
+  FPendingConnections.Clear;
   FFoundDevices.Clear;
 
   inherited DoStarted;
@@ -444,9 +444,9 @@ begin
 
   EnterCriticalSection(FConnectionsCS);
   try
-    if FClients.Count > 0 then begin
+    if FConnections.Count > 0 then begin
       // Make copy of the connected clients.
-      for Client in FClients do
+      for Client in FConnections do
         Clients.Add(Client);
     end;
   finally

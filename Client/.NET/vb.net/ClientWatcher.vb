@@ -11,8 +11,8 @@ Friend NotInheritable Class ClientWatcher
 
 #Region "Connections management"
     Private FConnectionsCS As Object
-    Private FClients As List(Of GattClient) ' Connected clients.
-    Private FConnections As Dictionary(Of Int64, GattClient) ' Pending connections.
+    Private FConnections As List(Of GattClient)
+    Private FPendingConnections As Dictionary(Of Int64, GattClient)
     Private FFoundDevices As List(Of Int64)
 #End Region
 
@@ -20,15 +20,15 @@ Friend NotInheritable Class ClientWatcher
     Private Sub RemoveClient(Client As GattClient)
         SyncLock FConnectionsCS
             ' Remove client from the connections list.
-            If FConnections.ContainsKey(Client.Address) Then
+            If FPendingConnections.ContainsKey(Client.Address) Then
                 RemoveHandler Client.OnCharacteristicChanged, AddressOf ClientCharacteristicChanged
                 RemoveHandler Client.OnConnect, AddressOf ClientConnect
                 RemoveHandler Client.OnDisconnect, AddressOf ClientDisconnect
-                FConnections.Remove(Client.Address)
+                FPendingConnections.Remove(Client.Address)
             End If
 
             ' Remove client from the clients list.
-            If FClients.Contains(Client) Then FClients.Remove(Client)
+            If FConnections.Contains(Client) Then FConnections.Remove(Client)
         End SyncLock
     End Sub
 #End Region
@@ -62,7 +62,7 @@ Friend NotInheritable Class ClientWatcher
         Else
             ' Othewrwise - add it to the connected clients list.
             SyncLock FConnectionsCS
-                FClients.Add(Client)
+                FConnections.Add(Client)
             End SyncLock
         End If
 
@@ -106,7 +106,7 @@ Friend NotInheritable Class ClientWatcher
 
         SyncLock FConnectionsCS
             ' Make sure that device Is Not in connections list.
-            If Not FConnections.ContainsKey(Address) Then
+            If Not FPendingConnections.ContainsKey(Address) Then
                 ' Make sure that we did Not see this device early.
                 If Not FFoundDevices.Contains(Address) Then
                     ' Check devices name.
@@ -132,7 +132,7 @@ Friend NotInheritable Class ClientWatcher
                         ' If connection started with success...
                         If Result = wclErrors.WCL_E_SUCCESS Then
                             ' ...add device to pending connections list.
-                            FConnections.Add(Address, Client)
+                            FPendingConnections.Add(Address, Client)
                         End If
 
                         ' Now we can remove the device from found devices list.
@@ -147,8 +147,8 @@ Friend NotInheritable Class ClientWatcher
 
     Protected Overrides Sub DoStarted()
         ' Clear all lists.
-        FClients.Clear()
         FConnections.Clear()
+        FPendingConnections.Clear()
         FFoundDevices.Clear()
 
         MyBase.DoStarted()
@@ -157,9 +157,9 @@ Friend NotInheritable Class ClientWatcher
     Protected Overrides Sub DoStopped()
         Dim Clients As List(Of GattClient) = New List(Of GattClient)
         SyncLock FConnectionsCS
-            If FClients.Count > 0 Then
+            If FConnections.Count > 0 Then
                 ' Make copy of the connected clients.
-                For Each Client As GattClient In FClients
+                For Each Client As GattClient In FConnections
                     Clients.Add(Client)
                 Next
             End If
@@ -181,8 +181,8 @@ Friend NotInheritable Class ClientWatcher
         MyBase.New()
 
         FConnectionsCS = New Object()
-        FClients = New List(Of GattClient)
-        FConnections = New Dictionary(Of Int64, GattClient)
+        FConnections = New List(Of GattClient)
+        FPendingConnections = New Dictionary(Of Int64, GattClient)
         FFoundDevices = New List(Of Int64)
 
         OnClientDisconnectedEvent = Nothing
@@ -199,9 +199,9 @@ Friend NotInheritable Class ClientWatcher
 
         Dim Client As GattClient = Nothing
         SyncLock FConnectionsCS
-            If FConnections.ContainsKey(Address) Then Client = FConnections(Address)
+            If FPendingConnections.ContainsKey(Address) Then Client = FPendingConnections(Address)
             If Client IsNot Nothing Then
-                If Not FClients.Contains(Client) Then Client = Nothing
+                If Not FConnections.Contains(Client) Then Client = Nothing
             End If
         End SyncLock
 
@@ -215,10 +215,10 @@ Friend NotInheritable Class ClientWatcher
         If Not Monitoring Then Return wclConnectionErrors.WCL_E_CONNECTION_CLOSED
 
         SyncLock FConnectionsCS
-            If Not FConnections.ContainsKey(Address) Then Return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
+            If Not FPendingConnections.ContainsKey(Address) Then Return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
 
-            Dim Client As GattClient = FConnections(Address)
-            If Not FClients.Contains(Client) Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
+            Dim Client As GattClient = FPendingConnections(Address)
+            If Not FConnections.Contains(Client) Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
 
             Return Client.ReadValue(Data)
         End SyncLock
@@ -229,10 +229,10 @@ Friend NotInheritable Class ClientWatcher
         If Data Is Nothing OrElse Data.Length = 0 Then Return wclErrors.WCL_E_INVALID_ARGUMENT
 
         SyncLock FConnectionsCS
-            If Not FConnections.ContainsKey(Address) Then Return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
+            If Not FPendingConnections.ContainsKey(Address) Then Return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
 
-            Dim Client As GattClient = FConnections(Address)
-            If Not FClients.Contains(Client) Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
+            Dim Client As GattClient = FPendingConnections(Address)
+            If Not FConnections.Contains(Client) Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
 
             Return Client.WriteValue(Data)
         End SyncLock

@@ -19,8 +19,8 @@ namespace MultiGatt
 
         #region Connections management
         private Object FConnectionsCS;
-        private List<GattClient> FClients; // Connected clients.
-        private Dictionary<Int64, GattClient> FConnections; // Pending connections.
+        private List<GattClient> FConnections;
+        private Dictionary<Int64, GattClient> FPendingConnections;
         private List<Int64> FFoundDevices;
         #endregion Connections management
 
@@ -30,17 +30,17 @@ namespace MultiGatt
             lock (FConnectionsCS)
             {
                 // Remove client from the connections list.
-                if (FConnections.ContainsKey(Client.Address))
+                if (FPendingConnections.ContainsKey(Client.Address))
                 {
                     Client.OnCharacteristicChanged -= ClientCharacteristicChanged;
                     Client.OnConnect -= ClientConnect;
                     Client.OnDisconnect -= ClientDisconnect;
-                    FConnections.Remove(Client.Address);
+                    FPendingConnections.Remove(Client.Address);
                 }
 
                 // Remove client from the clients list.
-                if (FClients.Contains(Client))
-                    FClients.Remove(Client);
+                if (FConnections.Contains(Client))
+                    FConnections.Remove(Client);
             }
         }
         #endregion Helper method
@@ -79,7 +79,7 @@ namespace MultiGatt
                 // Othewrwise - add it to the connected clients list.
                 lock (FConnectionsCS)
                 {
-                    FClients.Add(Client);
+                    FConnections.Add(Client);
                 }
             }
 
@@ -138,7 +138,7 @@ namespace MultiGatt
             lock (FConnectionsCS)
             {
                 // Make sure that device is not in connections list.
-                if (!FConnections.ContainsKey(Address))
+                if (!FPendingConnections.ContainsKey(Address))
                 {
                     // Make sure that we did not see this device early.
                     if (!FFoundDevices.Contains(Address))
@@ -172,7 +172,7 @@ namespace MultiGatt
                             if (Result == wclErrors.WCL_E_SUCCESS)
                             {
                                 // ...add device to pending connections list.
-                                FConnections.Add(Address, Client);
+                                FPendingConnections.Add(Address, Client);
                             }
 
                             // Now we can remove the device from found devices list.
@@ -188,8 +188,8 @@ namespace MultiGatt
         protected override void DoStarted()
         {
             // Clear all lists.
-            FClients.Clear();
             FConnections.Clear();
+            FPendingConnections.Clear();
             FFoundDevices.Clear();
 
             base.DoStarted();
@@ -200,10 +200,10 @@ namespace MultiGatt
             List<GattClient> Clients = new List<GattClient>();
             lock (FConnectionsCS)
             {
-                if (FClients.Count > 0)
+                if (FConnections.Count > 0)
                 {
                     // Make copy of the connected clients.
-                    foreach (GattClient Client in FClients)
+                    foreach (GattClient Client in FConnections)
                         Clients.Add(Client);
                 }
             }
@@ -224,8 +224,8 @@ namespace MultiGatt
             : base()
         {
             FConnectionsCS = new Object();
-            FClients = new List<GattClient>();
-            FConnections = new Dictionary<Int64, GattClient>();
+            FConnections = new List<GattClient>();
+            FPendingConnections = new Dictionary<Int64, GattClient>();
             FFoundDevices = new List<Int64>();
 
             OnClientDisconnected = null;
@@ -245,11 +245,11 @@ namespace MultiGatt
             GattClient Client = null;
             lock (FConnectionsCS)
             {
-                if (FConnections.ContainsKey(Address))
-                    Client = FConnections[Address];
+                if (FPendingConnections.ContainsKey(Address))
+                    Client = FPendingConnections[Address];
                 if (Client != null)
                 {
-                    if (!FClients.Contains(Client))
+                    if (!FConnections.Contains(Client))
                         Client = null;
                 }
             }
@@ -268,11 +268,11 @@ namespace MultiGatt
 
             lock (FConnectionsCS)
             {
-                if (!FConnections.ContainsKey(Address))
+                if (!FPendingConnections.ContainsKey(Address))
                     return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND;
 
-                GattClient Client = FConnections[Address];
-                if (!FClients.Contains(Client))
+                GattClient Client = FPendingConnections[Address];
+                if (!FConnections.Contains(Client))
                     return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE;
 
                 return Client.ReadValue(out Data);
@@ -288,11 +288,11 @@ namespace MultiGatt
 
             lock (FConnectionsCS)
             {
-                if (!FConnections.ContainsKey(Address))
+                if (!FPendingConnections.ContainsKey(Address))
                     return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND;
 
-                GattClient Client = FConnections[Address];
-                if (!FClients.Contains(Client))
+                GattClient Client = FPendingConnections[Address];
+                if (!FConnections.Contains(Client))
                     return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE;
 
                 return Client.WriteValue(Data);

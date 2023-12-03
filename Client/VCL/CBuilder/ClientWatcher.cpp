@@ -12,7 +12,7 @@
 
 TGattClient* __fastcall TClientWatcher::FindClient(const __int64 Address)
 {
-	for (CLIENTS_LIST::iterator i = FClients->begin(); i != FClients->end(); i++)
+	for (CLIENTS_LIST::iterator i = FConnections->begin(); i != FConnections->end(); i++)
 	{
 		if ((*i)->Address == Address)
 			return *i;
@@ -22,7 +22,7 @@ TGattClient* __fastcall TClientWatcher::FindClient(const __int64 Address)
 
 TGattClient* __fastcall TClientWatcher::FindConnection(const __int64 Address)
 {
-	for (CLIENTS_LIST::iterator i = FConnections->begin(); i != FConnections->end(); i++)
+	for (CLIENTS_LIST::iterator i = FPendingConnections->begin(); i != FPendingConnections->end(); i++)
 	{
 		if ((*i)->Address == Address)
 			return *i;
@@ -63,12 +63,12 @@ void __fastcall TClientWatcher::RemoveClient(TGattClient* Client)
 			Client->OnCharacteristicChanged = NULL;
 			Client->OnConnect = NULL;
 			Client->OnDisconnect = NULL;
-			FConnections->remove(Client);
+			FPendingConnections->remove(Client);
 		}
 
 		// Remove client from the clients list.
 		if (FindClient(Client->Address))
-			FClients->remove(Client);
+			FConnections->remove(Client);
 	}
 	__finally
 	{
@@ -135,7 +135,7 @@ void __fastcall TClientWatcher::ClientConnect(TObject* Sender, const int Error)
 			EnterCriticalSection(&FConnectionsCS);
 			__try
 			{
-				FClients->push_back(Client);
+				FConnections->push_back(Client);
 			}
 			__finally
 			{
@@ -164,8 +164,8 @@ __fastcall TClientWatcher::TClientWatcher() : TwclBluetoothLeBeaconWatcher(NULL)
 {
 	InitializeCriticalSection(&FConnectionsCS);
 
-	FClients = new CLIENTS_LIST();
 	FConnections = new CLIENTS_LIST();
+	FPendingConnections = new CLIENTS_LIST();
 	FFoundDevices = new FOUND_DEVICES_LIST();
 
 	FTempClient = NULL;
@@ -188,8 +188,8 @@ __fastcall TClientWatcher::~TClientWatcher()
 	// Now we can destroy the objects.
 	DeleteCriticalSection(&FConnectionsCS);
 
-	delete FClients;
 	delete FConnections;
+	delete FPendingConnections;
 	delete FFoundDevices;
 }
 
@@ -280,7 +280,7 @@ void __fastcall TClientWatcher::DoAdvertisementFrameInformation(
 						// If connection started with success...
 						if (Result == WCL_E_SUCCESS)
 							// ...add device to pending connections list.
-							FConnections->push_back(Client);
+							FPendingConnections->push_back(Client);
 						else
 							// Otherwise - destroy the object.
 							Client->Free();
@@ -332,8 +332,8 @@ void __fastcall TClientWatcher::DoDeviceFound(const __int64 Address,
 void __fastcall TClientWatcher::DoStarted()
 {
 	// Clear all lists.
-	FClients->clear();
 	FConnections->clear();
+	FPendingConnections->clear();
 	FFoundDevices->clear();
 
 	TwclBluetoothLeBeaconWatcher::DoStarted();
@@ -346,10 +346,10 @@ void __fastcall TClientWatcher::DoStopped()
 	EnterCriticalSection(&FConnectionsCS);
 	__try
 	{
-		if (FClients->size() > 0)
+		if (FConnections->size() > 0)
 		{
 			// Make copy of the connected clients.
-			for (CLIENTS_LIST::iterator i = FClients->begin(); i != FClients->end(); i++)
+			for (CLIENTS_LIST::iterator i = FConnections->begin(); i != FConnections->end(); i++)
 				Clients->push_back(*i);
 		}
 	}
