@@ -64,14 +64,6 @@ type
   private
     FWatcher: TClientWatcher;
 
-    {$REGION Synchronized members}
-    FSyncCS: RTL_CRITICAL_SECTION;
-    FSyncAddress: Int64;
-    FSyncResult: Integer;
-    FSyncName: string;
-    FSyncValue: TwclGattCharacteristicValue;
-    {$ENDREGION Synchronized members}
-
     {$REGION Client Watcher event handlers}
     procedure WatcherStopped(Sender: TObject);
     procedure WatcherStarted(Sender: TObject);
@@ -85,20 +77,6 @@ type
     procedure WatcherClientDisconnected(const Address: Int64;
       const Reason: Integer);
     {$ENDREGION Client Watcher event handlers}
-
-    {$REGION Synchronized methods}
-    procedure ManagerAfterOpenSync;
-    procedure ManagerBeforeCloseSync;
-    procedure ManagerClosedSync;
-
-    procedure WatcherStoppedSync;
-    procedure WatcherStartedSync;
-    procedure WatcherValueChangedSync;
-    procedure WatcherDeviceFoundSync;
-    procedure WatcherConnectionStartedSync;
-    procedure WatcherConnectionCompletedSync;
-    procedure WatcherClientDisconnectedSync;
-    {$ENDREGION Synchronized methods}
   end;
 
 var
@@ -274,8 +252,6 @@ begin
   FWatcher.OnValueChanged := WatcherValueChanged;
   FWatcher.OnStarted := WatcherStarted;
   FWatcher.OnStopped := WatcherStopped;
-
-  InitializeCriticalSection(FSyncCS);
 end;
 
 procedure TfmMain.FormDestroy(Sender: TObject);
@@ -283,255 +259,177 @@ begin
   acStop.Execute;
 
   FWatcher.Free;
-
-  DeleteCriticalSection(FSyncCS);
-end;
-
-procedure TfmMain.ManagerAfterOpenSync;
-begin
-  lbLog.Items.Add('Bluetooth Manager opened');
 end;
 
 procedure TfmMain.ManagerAfterOpen(Sender: TObject);
 begin
-  if MainThreadID = GetCurrentThreadId then
-    ManagerAfterOpenSync
-  else
-    TThread.Synchronize(nil, ManagerAfterOpenSync);
-end;
-
-procedure TfmMain.ManagerBeforeCloseSync;
-begin
-  lbLog.Items.Add('Bluetooth Manager is closing');
+  TThread.Synchronize(nil,
+    procedure
+    begin
+      lbLog.Items.Add('Bluetooth Manager opened');
+    end
+  );
 end;
 
 procedure TfmMain.ManagerBeforeClose(Sender: TObject);
 begin
-  if MainThreadID = GetCurrentThreadId then
-    ManagerBeforeCloseSync
-  else
-    TThread.Synchronize(nil, ManagerBeforeCloseSync);
-end;
-
-procedure TfmMain.ManagerClosedSync;
-begin
-  lbLog.Items.Add('Bluetooth Manager closed');
+  TThread.Synchronize(nil,
+    procedure
+    begin
+      lbLog.Items.Add('Bluetooth Manager is closing');
+    end
+  );
 end;
 
 procedure TfmMain.ManagerClosed(Sender: TObject);
 begin
-  if MainThreadID = GetCurrentThreadId then
-    ManagerClosedSync
-  else
-    TThread.Synchronize(nil, ManagerClosedSync);
-end;
-
-procedure TfmMain.WatcherClientDisconnectedSync;
-var
-  Item: TListItem;
-  DeviceAddress: Int64;
-begin
-  lbLog.Items.Add('Device ' + IntToHex(FSyncAddress, 12) + ' disconnected: 0x' +
-    IntToHex(FSyncResult, 8));
-
-  if lvDevices.Items.Count > 0 then begin
-    for Item in lvDevices.Items do begin
-      DeviceAddress := StrToInt64('$' + Item.Caption);
-      if DeviceAddress = FSyncAddress then begin
-        lvDevices.Items.Delete(Item.Index);
-        Break;
-      end;
-    end;
-  end;
+  TThread.Synchronize(nil,
+    procedure
+    begin
+      lbLog.Items.Add('Bluetooth Manager closed');
+    end
+  );
 end;
 
 procedure TfmMain.WatcherClientDisconnected(const Address: Int64;
   const Reason: Integer);
 begin
-  EnterCriticalSection(FSyncCS);
-  try
-    FSyncAddress := Address;
-    FSyncResult := Reason;
-
-    if MainThreadID = GetCurrentThreadId then
-      WatcherClientDisconnectedSync
-    else
-      TThread.Synchronize(nil, WatcherClientDisconnectedSync);
-  finally
-    LeaveCriticalSection(FSyncCS);
-  end;
-end;
-
-procedure TfmMain.WatcherConnectionCompletedSync;
-var
-  Item: TListItem;
-  DeviceAddress: Int64;
-begin
-  lbLog.Items.Add('Connection to ' + IntToHex(FSyncAddress, 12) +
-    ' completed: 0x' + IntToHex(FSyncResult, 8));
-
-  if lvDevices.Items.Count > 0 then begin
-    for Item in lvDevices.Items do begin
-      DeviceAddress := StrToInt64('$' + Item.Caption);
-      if DeviceAddress = FSyncAddress then begin
-        if FSyncResult <> WCL_E_SUCCESS then
-          lvDevices.Items.Delete(Item.Index)
-        else begin
-          Item.SubItems[1] := 'Connected';
-          Item.Data := Pointer(dsConnected);
+  TThread.Synchronize(nil,
+    procedure
+    var
+      Item: TListItem;
+      DeviceAddress: Int64;
+    begin
+      lbLog.Items.Add('Device ' + IntToHex(Address, 12) + ' disconnected: 0x' +
+        IntToHex(Reason, 8));
+      if lvDevices.Items.Count > 0 then begin
+        for Item in lvDevices.Items do begin
+          DeviceAddress := StrToInt64('$' + Item.Caption);
+          if DeviceAddress = Address then begin
+            lvDevices.Items.Delete(Item.Index);
+            Break;
+          end;
         end;
-        Break;
       end;
-    end;
-  end;
+    end
+  );
 end;
 
 procedure TfmMain.WatcherConnectionCompleted(const Address: Int64;
   const Result: Integer);
 begin
-  EnterCriticalSection(FSyncCS);
-  try
-    FSyncAddress := Address;
-    FSyncResult := Result;
-
-    if MainThreadID = GetCurrentThreadId then
-      WatcherConnectionCompletedSync
-    else
-      TThread.Synchronize(nil, WatcherConnectionCompletedSync);
-  finally
-    LeaveCriticalSection(FSyncCS);
-  end;
-end;
-
-procedure TfmMain.WatcherConnectionStartedSync;
-var
-  Item: TListItem;
-  DeviceAddress: Int64;
-begin
-  lbLog.Items.Add('Connection to ' + IntToHex(FSyncAddress, 12) +
-    ' started: 0x' + IntToHex(FSyncResult, 8));
-
-  if lvDevices.Items.Count > 0 then begin
-    for Item in lvDevices.Items do begin
-      DeviceAddress := StrToInt64('$' + Item.Caption);
-      if DeviceAddress = FSyncAddress then begin
-        if FSyncResult <> WCL_E_SUCCESS then
-          lvDevices.Items.Delete(Item.Index)
-        else begin
-          Item.SubItems[1] := 'Connecting...';
-          Item.Data := Pointer(dsConnecting);
+  TThread.Synchronize(nil,
+    procedure
+    var
+      Item: TListItem;
+      DeviceAddress: Int64;
+    begin
+      lbLog.Items.Add('Connection to ' + IntToHex(Address, 12) +
+        ' completed: 0x' + IntToHex(Result, 8));
+      if lvDevices.Items.Count > 0 then begin
+        for Item in lvDevices.Items do begin
+          DeviceAddress := StrToInt64('$' + Item.Caption);
+          if DeviceAddress = Address then begin
+            if Result <> WCL_E_SUCCESS then
+              lvDevices.Items.Delete(Item.Index)
+            else begin
+              Item.SubItems[1] := 'Connected';
+              Item.Data := Pointer(dsConnected);
+            end;
+            Break;
+          end;
         end;
-        Break;
       end;
-    end;
-  end;
+    end
+  );
 end;
 
 procedure TfmMain.WatcherConnectionStarted(const Address: Int64;
   const Result: Integer);
 begin
-  EnterCriticalSection(FSyncCS);
-  try
-    FSyncAddress := Address;
-    FSyncResult := Result;
-
-    if MainThreadID = GetCurrentThreadId then
-      WatcherConnectionStartedSync
-    else
-      TThread.Synchronize(nil, WatcherConnectionStartedSync);
-  finally
-    LeaveCriticalSection(FSyncCS);
-  end;
-end;
-
-procedure TfmMain.WatcherDeviceFoundSync;
-var
-  Item: TListItem;
-begin
-  lbLog.Items.Add('Device ' + IntToHex(FSyncAddress, 12) + ' found: ' +
-    FSyncName);
-
-  Item := lvDevices.Items.Add();
-  Item.Caption := IntToHex(FSyncAddress, 12);
-  Item.SubItems.Add(FSyncName);
-  Item.SubItems.Add('Found...');
-  Item.Data := Pointer(dsFound);
+  TThread.Synchronize(nil,
+    procedure
+    var
+      Item: TListItem;
+      DeviceAddress: Int64;
+    begin
+      lbLog.Items.Add('Connection to ' + IntToHex(Address, 12) +
+        ' started: 0x' + IntToHex(Result, 8));
+      if lvDevices.Items.Count > 0 then begin
+        for Item in lvDevices.Items do begin
+          DeviceAddress := StrToInt64('$' + Item.Caption);
+          if DeviceAddress = Address then begin
+            if Result <> WCL_E_SUCCESS then
+              lvDevices.Items.Delete(Item.Index)
+            else begin
+              Item.SubItems[1] := 'Connecting...';
+              Item.Data := Pointer(dsConnecting);
+            end;
+            Break;
+          end;
+        end;
+      end;
+    end
+  );
 end;
 
 procedure TfmMain.WatcherDeviceFound(const Address: Int64; const Name: string);
 begin
-  EnterCriticalSection(FSyncCS);
-  try
-    FSyncAddress := Address;
-    FSyncName := Name;
-
-    if MainThreadID = GetCurrentThreadId then
-      WatcherDeviceFoundSync
-    else
-      TThread.Synchronize(nil, WatcherDeviceFoundSync);
-  finally
-    LeaveCriticalSection(FSyncCS);
-  end;
-end;
-
-procedure TfmMain.WatcherStartedSync;
-begin
-  lvDevices.Items.Clear;
-  lbLog.Items.Add('Client watcher started');
+  TThread.Synchronize(nil,
+    procedure
+    var
+      Item: TListItem;
+    begin
+      lbLog.Items.Add('Device ' + IntToHex(Address, 12) + ' found: ' + Name);
+      Item := lvDevices.Items.Add();
+      Item.Caption := IntToHex(Address, 12);
+      Item.SubItems.Add(Name);
+      Item.SubItems.Add('Found...');
+      Item.Data := Pointer(dsFound);
+    end
+  );
 end;
 
 procedure TfmMain.WatcherStarted(Sender: TObject);
 begin
-  if MainThreadID = GetCurrentThreadId then
-    WatcherStartedSync
-  else
-    TThread.Synchronize(nil, WatcherStartedSync);
-end;
-
-procedure TfmMain.WatcherStoppedSync;
-begin
-  lvDevices.Items.Clear;
-  lbLog.Items.Add('Client watcher stopped');
-
-  Manager.Close;
+  TThread.Synchronize(nil,
+    procedure
+    begin
+      lvDevices.Items.Clear;
+      lbLog.Items.Add('Client watcher started');
+    end
+  );
 end;
 
 procedure TfmMain.WatcherStopped(Sender: TObject);
 begin
-  if MainThreadID = GetCurrentThreadId then
-    WatcherStoppedSync
-  else
-    TThread.Synchronize(nil, WatcherStoppedSync);
-end;
-
-procedure TfmMain.WatcherValueChangedSync;
-var
-  Val: Cardinal;
-begin
-  if Length(FSyncValue) > 3 then begin
-    Val := (FSyncValue[3] shl 24) or (FSyncValue[2] shl 16) or
-      (FSyncValue[1] shl 8) or FSyncValue[0];
-    lbLog.Items.Add('Data received from ' + IntToHex(FSyncAddress, 12) + ': ' +
-      IntToStr(Val));
-  end else
-    lbLog.Items.Add('Empty data received');
+  TThread.Synchronize(nil,
+    procedure
+    begin
+      lvDevices.Items.Clear;
+      lbLog.Items.Add('Client watcher stopped');
+      Manager.Close;
+    end
+  );
 end;
 
 procedure TfmMain.WatcherValueChanged(const Address: Int64;
   const Value: TwclGattCharacteristicValue);
 begin
-  EnterCriticalSection(FSyncCS);
-  try
-    FSyncAddress := Address;
-    FSyncValue := Value;
-
-    if MainThreadID = GetCurrentThreadId then
-      WatcherValueChangedSync
-    else
-      TThread.Synchronize(nil, WatcherValueChangedSync);
-  finally
-    LeaveCriticalSection(FSyncCS);
-  end;
+  TThread.Synchronize(nil,
+    procedure
+    var
+      Val: Cardinal;
+    begin
+      if Length(Value) > 3 then begin
+        Val := (Value[3] shl 24) or (Value[2] shl 16) or (Value[1] shl 8) or
+          Value[0];
+        lbLog.Items.Add('Data received from ' + IntToHex(Address, 12) + ': ' +
+          IntToStr(Val));
+      end else
+        lbLog.Items.Add('Empty data received');
+    end
+  );
 end;
 
 end.

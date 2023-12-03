@@ -1,1 +1,2 @@
 Do not run this samples from IDE. Run it after build as common application. IDE debugger may block UI!
+CBuilder: make sure that the path to Bluetooth Framework is added to the "Compiler" System Include Path and Library Path (not only for "Classic Compiler")

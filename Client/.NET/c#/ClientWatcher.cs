@@ -20,17 +20,19 @@ namespace MultiGatt
         #region Connections management
         private Object FConnectionsCS;
         private List<GattClient> FConnections;
-        private Dictionary<Int64, GattClient> FPendingConnections;
-        private List<Int64> FFoundDevices;
+        private List<Int64> FPendingConnections;
         #endregion Connections management
 
         #region Helper method
         private void RemoveClient(GattClient Client)
         {
+            if (Client == null)
+                return;
+
             lock (FConnectionsCS)
             {
                 // Remove client from the connections list.
-                if (FPendingConnections.ContainsKey(Client.Address))
+                if (FPendingConnections.Contains(Client.Address))
                 {
                     Client.OnCharacteristicChanged -= ClientCharacteristicChanged;
                     Client.OnConnect -= ClientConnect;
@@ -42,6 +44,20 @@ namespace MultiGatt
                 if (FConnections.Contains(Client))
                     FConnections.Remove(Client);
             }
+        }
+
+        private GattClient FindClient(Int64 Address)
+        {
+            if (FConnections.Count == 0)
+                return null;
+
+            foreach (GattClient Client in FConnections)
+            {
+                if (Client.Address == Address)
+                    return Client;
+            }
+
+            return null;
         }
         #endregion Helper method
 
@@ -62,17 +78,16 @@ namespace MultiGatt
             // If we stopped we still can get client connection event.
             if (!Monitoring)
             {
-                // Remove client from connections list.
-                RemoveClient(Client);
                 // Disconnect client and set the connection error.
-                Client.Disconnect();
-                // Set the connection error code here.
-                Error = wclBluetoothErrors.WCL_E_BLUETOOTH_LE_CONNECTION_TERMINATED;
+                if (Error == wclErrors.WCL_E_SUCCESS)
+                    Client.Disconnect();
+                else
+                    RemoveClient(Client);
+                return;
             }
 
             // If connection failed remove client from connections list.
             if (Error != wclErrors.WCL_E_SUCCESS)
-                // If it was already remove - nothing happens.
                 RemoveClient(Client);
             else
             {
@@ -89,9 +104,12 @@ namespace MultiGatt
 
         private void ClientCharacteristicChanged(Object Sender, UInt16 Handle, Byte[] Value)
         {
-            GattClient Client = (GattClient)Sender;
-            // Simple call the value changed event.
-            DoValueChanged(Client.Address, Value);
+            if (Monitoring)
+            {
+                GattClient Client = (GattClient)Sender;
+                // Simple call the value changed event.
+                DoValueChanged(Client.Address, Value);
+            }
         }
         #endregion Client event handlers
 
@@ -138,61 +156,33 @@ namespace MultiGatt
             lock (FConnectionsCS)
             {
                 // Make sure that device is not in connections list.
-                if (!FPendingConnections.ContainsKey(Address))
-                {
-                    // Make sure that we did not see this device early.
-                    if (!FFoundDevices.Contains(Address))
-                    {
-                        // Check devices name.
-                        if (Name == DEVICE_NAME)
-                        {
-                            // Add device into found list.
-                            FFoundDevices.Add(Address);
-                            // Call device found event.
-                            DoDeviceFound(Address, Name);
-                        }
-                    }
-                    else
-                    {
-                        // Device is in our devices list. Make sure we received connectable advertisement.
-                        if (PacketType == wclBluetoothLeAdvertisementType.atConnectableDirected ||
-                            PacketType == wclBluetoothLeAdvertisementType.atConnectableUndirected)
-                        {
-                            // We are ready to connect to the device.
-                            GattClient Client = new GattClient();
-                            // Set required event handlers.
-                            Client.OnCharacteristicChanged += ClientCharacteristicChanged;
-                            Client.OnConnect += ClientConnect;
-                            Client.OnDisconnect += ClientDisconnect;
-                            // Try to start connection to the device.
-                            Int32 Result = Client.Connect(Address, Radio);
-                            // Report connection start event.
-                            DoConnectionStarted(Address, Result);
-                            // If connection started with success...
-                            if (Result == wclErrors.WCL_E_SUCCESS)
-                            {
-                                // ...add device to pending connections list.
-                                FPendingConnections.Add(Address, Client);
-                            }
+                if (FPendingConnections.Contains(Address))
+                    return;
 
-                            // Now we can remove the device from found devices list.
-                            FFoundDevices.Remove(Address);
-                        }
+                // Check devices name.
+                if (Name == DEVICE_NAME)
+                {
+                    // Notify about new device.
+                    DoDeviceFound(Address, Name);
+
+                    // Create client.
+                    GattClient Client = new GattClient();
+                    // Set required event handlers.
+                    Client.OnCharacteristicChanged += ClientCharacteristicChanged;
+                    Client.OnConnect += ClientConnect;
+                    Client.OnDisconnect += ClientDisconnect;
+                    // Try to start connection to the device.
+                    Int32 Result = Client.Connect(Address, Radio);
+                    // Report connection start event.
+                    DoConnectionStarted(Address, Result);
+                    // If connection started with success...
+                    if (Result == wclErrors.WCL_E_SUCCESS)
+                    {
+                        // ...add device to pending connections list.
+                        FPendingConnections.Add(Address);
                     }
                 }
             }
-
-            base.DoAdvertisementFrameInformation(Address, Timestamp, Rssi, Name, PacketType, Flags);
-        }
-
-        protected override void DoStarted()
-        {
-            // Clear all lists.
-            FConnections.Clear();
-            FPendingConnections.Clear();
-            FFoundDevices.Clear();
-
-            base.DoStarted();
         }
 
         protected override void DoStopped()
@@ -225,8 +215,7 @@ namespace MultiGatt
         {
             FConnectionsCS = new Object();
             FConnections = new List<GattClient>();
-            FPendingConnections = new Dictionary<Int64, GattClient>();
-            FFoundDevices = new List<Int64>();
+            FPendingConnections = new List<Int64>();
 
             OnClientDisconnected = null;
             OnConnectionCompleted = null;
@@ -242,20 +231,13 @@ namespace MultiGatt
             if (!Monitoring)
                 return wclConnectionErrors.WCL_E_CONNECTION_CLOSED;
 
-            GattClient Client = null;
+            GattClient Client;
             lock (FConnectionsCS)
             {
-                if (FPendingConnections.ContainsKey(Address))
-                    Client = FPendingConnections[Address];
-                if (Client != null)
-                {
-                    if (!FConnections.Contains(Client))
-                        Client = null;
-                }
+                Client = FindClient(Address);
+                if (Client == null)
+                    return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE;
             }
-
-            if (Client == null)
-                return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE;
             return Client.Disconnect();
         }
 
@@ -268,13 +250,9 @@ namespace MultiGatt
 
             lock (FConnectionsCS)
             {
-                if (!FPendingConnections.ContainsKey(Address))
-                    return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND;
-
-                GattClient Client = FPendingConnections[Address];
-                if (!FConnections.Contains(Client))
+                GattClient Client = FindClient(Address);
+                if (Client == null)
                     return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE;
-
                 return Client.ReadValue(out Data);
             }
         }
@@ -288,13 +266,9 @@ namespace MultiGatt
 
             lock (FConnectionsCS)
             {
-                if (!FPendingConnections.ContainsKey(Address))
-                    return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND;
-
-                GattClient Client = FPendingConnections[Address];
-                if (!FConnections.Contains(Client))
+                GattClient Client = FindClient(Address);
+                if (Client == null)
                     return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE;
-
                 return Client.WriteValue(Data);
             }
         }

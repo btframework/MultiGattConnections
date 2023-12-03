@@ -2,16 +2,16 @@
 <BorlandProject>
 	<Transactions>
     <Transaction>1899.12.30 00:00:00.000.586,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\GattClient.cpp=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.cpp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.783,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\main.dfm=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.558,=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Project1PCH1.h</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.358,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\ClientWatcher.h=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.h</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.783,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\main.h=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.h</Transaction>
     <Transaction>1899.12.30 00:00:00.000.358,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\ClientWatcher.cpp=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.cpp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.586,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\GattClient.h=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.h</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.631,=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.cpp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.497,=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.cpp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.646,=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.057,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\MultiGatt.cbproj=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Project1.cbproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.783,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\main.dfm=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.783,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\main.h=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.h</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.358,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\ClientWatcher.h=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.h</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.558,=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Project1PCH1.h</Transaction>
     <Transaction>1899.12.30 00:00:00.000.783,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\main.cpp=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.497,=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.cpp</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.631,=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.cpp</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.646,=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Unit1.cpp</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.586,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\GattClient.h=D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\Unit1.h</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.057,D:\Projects\Shared Projects\Windows\MultiGattConnections\Client\VCL\CBuilder\MultiGatt.cbproj=C:\Users\mike\Documents\Embarcadero\Studio\Projects\Project1.cbproj</Transaction>
   </Transactions>
 </BorlandProject>

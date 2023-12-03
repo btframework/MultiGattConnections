@@ -12,15 +12,16 @@ Friend NotInheritable Class ClientWatcher
 #Region "Connections management"
     Private FConnectionsCS As Object
     Private FConnections As List(Of GattClient)
-    Private FPendingConnections As Dictionary(Of Int64, GattClient)
-    Private FFoundDevices As List(Of Int64)
+    Private FPendingConnections As List(Of Int64)
 #End Region
 
 #Region "Helper method"
     Private Sub RemoveClient(Client As GattClient)
-        SyncLock FConnectionsCS
+        If Client Is Nothing Then Return
+
+        SyncLock (FConnectionsCS)
             ' Remove client from the connections list.
-            If FPendingConnections.ContainsKey(Client.Address) Then
+            If FPendingConnections.Contains(Client.Address) Then
                 RemoveHandler Client.OnCharacteristicChanged, AddressOf ClientCharacteristicChanged
                 RemoveHandler Client.OnConnect, AddressOf ClientConnect
                 RemoveHandler Client.OnDisconnect, AddressOf ClientDisconnect
@@ -31,6 +32,16 @@ Friend NotInheritable Class ClientWatcher
             If FConnections.Contains(Client) Then FConnections.Remove(Client)
         End SyncLock
     End Sub
+
+    Private Function FindClient(Address As Int64) As GattClient
+        If FConnections.Count = 0 Then Return Nothing
+
+        For Each Client As GattClient In FConnections
+            If Client.Address = Address Then Return Client
+        Next
+
+        Return Nothing
+    End Function
 #End Region
 
 #Region "Client Event handlers"
@@ -47,21 +58,21 @@ Friend NotInheritable Class ClientWatcher
 
         ' If we stopped we still can get client connection event.
         If Not Monitoring Then
-            ' Remove client from connections list.
-            RemoveClient(Client)
             ' Disconnect client And set the connection error.
-            Client.Disconnect()
-            ' Set the connection error code here.
-            [Error] = wclBluetoothErrors.WCL_E_BLUETOOTH_LE_CONNECTION_TERMINATED
+            If [Error] = wclErrors.WCL_E_SUCCESS Then
+                Client.Disconnect()
+            Else
+                RemoveClient(Client)
+            End If
+            Return
         End If
 
         ' If connection failed remove client from connections list.
         If [Error] <> wclErrors.WCL_E_SUCCESS Then
-            ' If it was already remove - nothing happens.
             RemoveClient(Client)
         Else
             ' Othewrwise - add it to the connected clients list.
-            SyncLock FConnectionsCS
+            SyncLock (FConnectionsCS)
                 FConnections.Add(Client)
             End SyncLock
         End If
@@ -71,9 +82,11 @@ Friend NotInheritable Class ClientWatcher
     End Sub
 
     Private Sub ClientCharacteristicChanged(Sender As Object, Handle As UInt16, Value As Byte())
-        Dim Client As GattClient = CType(Sender, GattClient)
-        ' Simple call the value changed event.
-        DoValueChanged(Client.Address, Value)
+        If Monitoring Then
+            Dim Client As GattClient = CType(Sender, GattClient)
+            ' Simple call the value changed event.
+            DoValueChanged(Client.Address, Value)
+        End If
     End Sub
 #End Region
 
@@ -104,59 +117,37 @@ Friend NotInheritable Class ClientWatcher
         ' Do nothing if we stopped.
         If Not Monitoring Then Return
 
-        SyncLock FConnectionsCS
+        SyncLock (FConnectionsCS)
             ' Make sure that device Is Not in connections list.
-            If Not FPendingConnections.ContainsKey(Address) Then
-                ' Make sure that we did Not see this device early.
-                If Not FFoundDevices.Contains(Address) Then
-                    ' Check devices name.
-                    If Name = DEVICE_NAME Then
-                        ' Add device into found list.
-                        FFoundDevices.Add(Address)
-                        ' Call device found event.
-                        DoDeviceFound(Address, Name)
-                    End If
-                Else
-                    ' Device Is in our devices list. Make sure we received connectable advertisement.
-                    If PacketType = wclBluetoothLeAdvertisementType.atConnectableDirected OrElse PacketType = wclBluetoothLeAdvertisementType.atConnectableUndirected Then
-                        ' We are ready to connect to the device.
-                        Dim Client As GattClient = New GattClient()
-                        ' Set required event handlers.
-                        AddHandler Client.OnCharacteristicChanged, AddressOf ClientCharacteristicChanged
-                        AddHandler Client.OnConnect, AddressOf ClientConnect
-                        AddHandler Client.OnDisconnect, AddressOf ClientDisconnect
-                        ' Try to start connection to the device.
-                        Dim Result As Int32 = Client.Connect(Address, Radio)
-                        ' Report connection start event.
-                        DoConnectionStarted(Address, Result)
-                        ' If connection started with success...
-                        If Result = wclErrors.WCL_E_SUCCESS Then
-                            ' ...add device to pending connections list.
-                            FPendingConnections.Add(Address, Client)
-                        End If
+            If FPendingConnections.Contains(Address) Then Return
 
-                        ' Now we can remove the device from found devices list.
-                        FFoundDevices.Remove(Address)
-                    End If
+            ' Check devices name.
+            If Name = DEVICE_NAME Then
+                ' Notify about New device.
+                DoDeviceFound(Address, Name)
+
+                ' Create client.
+                Dim Client As GattClient = New GattClient()
+                ' Set required event handlers.
+                AddHandler Client.OnCharacteristicChanged, AddressOf ClientCharacteristicChanged
+                AddHandler Client.OnConnect, AddressOf ClientConnect
+                AddHandler Client.OnDisconnect, AddressOf ClientDisconnect
+                ' Try to start connection to the device.
+                Dim Result As Int32 = Client.Connect(Address, Radio)
+                ' Report connection start event.
+                DoConnectionStarted(Address, Result)
+                ' If connection started with success...
+                If Result = wclErrors.WCL_E_SUCCESS Then
+                    ' ...add device to pending connections list.
+                    FPendingConnections.Add(Address)
                 End If
             End If
         End SyncLock
-
-        MyBase.DoAdvertisementFrameInformation(Address, Timestamp, Rssi, Name, PacketType, Flags)
-    End Sub
-
-    Protected Overrides Sub DoStarted()
-        ' Clear all lists.
-        FConnections.Clear()
-        FPendingConnections.Clear()
-        FFoundDevices.Clear()
-
-        MyBase.DoStarted()
     End Sub
 
     Protected Overrides Sub DoStopped()
-        Dim Clients As List(Of GattClient) = New List(Of GattClient)
-        SyncLock FConnectionsCS
+        Dim Clients As List(Of GattClient) = New List(Of GattClient)()
+        SyncLock (FConnectionsCS)
             If FConnections.Count > 0 Then
                 ' Make copy of the connected clients.
                 For Each Client As GattClient In FConnections
@@ -181,9 +172,8 @@ Friend NotInheritable Class ClientWatcher
         MyBase.New()
 
         FConnectionsCS = New Object()
-        FConnections = New List(Of GattClient)
-        FPendingConnections = New Dictionary(Of Int64, GattClient)
-        FFoundDevices = New List(Of Int64)
+        FConnections = New List(Of GattClient)()
+        FPendingConnections = New List(Of Int64)()
 
         OnClientDisconnectedEvent = Nothing
         OnConnectionCompletedEvent = Nothing
@@ -197,15 +187,11 @@ Friend NotInheritable Class ClientWatcher
     Public Function Disconnect(Address As Int64) As Int32
         If Not Monitoring Then Return wclConnectionErrors.WCL_E_CONNECTION_CLOSED
 
-        Dim Client As GattClient = Nothing
-        SyncLock FConnectionsCS
-            If FPendingConnections.ContainsKey(Address) Then Client = FPendingConnections(Address)
-            If Client IsNot Nothing Then
-                If Not FConnections.Contains(Client) Then Client = Nothing
-            End If
+        Dim Client As GattClient
+        SyncLock (FConnectionsCS)
+            Client = FindClient(Address)
+            If Client Is Nothing Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
         End SyncLock
-
-        If Client Is Nothing Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
         Return Client.Disconnect()
     End Function
 
@@ -214,12 +200,9 @@ Friend NotInheritable Class ClientWatcher
 
         If Not Monitoring Then Return wclConnectionErrors.WCL_E_CONNECTION_CLOSED
 
-        SyncLock FConnectionsCS
-            If Not FPendingConnections.ContainsKey(Address) Then Return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
-
-            Dim Client As GattClient = FPendingConnections(Address)
-            If Not FConnections.Contains(Client) Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
-
+        SyncLock (FConnectionsCS)
+            Dim Client As GattClient = FindClient(Address)
+            If Client Is Nothing Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
             Return Client.ReadValue(Data)
         End SyncLock
     End Function
@@ -228,12 +211,9 @@ Friend NotInheritable Class ClientWatcher
         If Not Monitoring Then Return wclConnectionErrors.WCL_E_CONNECTION_CLOSED
         If Data Is Nothing OrElse Data.Length = 0 Then Return wclErrors.WCL_E_INVALID_ARGUMENT
 
-        SyncLock FConnectionsCS
-            If Not FPendingConnections.ContainsKey(Address) Then Return wclBluetoothErrors.WCL_E_BLUETOOTH_LE_DEVICE_NOT_FOUND
-
-            Dim Client As GattClient = FPendingConnections(Address)
-            If Not FConnections.Contains(Client) Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
-
+        SyncLock (FConnectionsCS)
+            Dim Client As GattClient = FindClient(Address)
+            If Client Is Nothing Then Return wclConnectionErrors.WCL_E_CONNECTION_NOT_ACTIVE
             Return Client.WriteValue(Data)
         End SyncLock
     End Function

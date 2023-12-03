@@ -72,24 +72,6 @@ private:	// User declarations
 	void __fastcall WatcherClientDisconnected(const __int64 Address,
 		const int Reason);
 
-	RTL_CRITICAL_SECTION FSyncCS;
-	__int64 FSyncAddress;
-	System::UnicodeString FSyncName;
-	int FSyncResult;
-	TwclGattCharacteristicValue FSyncValue;
-
-	void __fastcall ManagerAfterOpenSync();
-	void __fastcall ManagerBeforeCloseSync();
-	void __fastcall ManagerClosedSync();
-
-	void __fastcall WatcherClientDisconnectedSync();
-	void __fastcall WatcherConnectionCompletedSync();
-	void __fastcall WatcherConnectionStartedSync();
-	void __fastcall WatcherDeviceFoundSync();
-	void __fastcall WatcherStoppedSync();
-	void __fastcall WatcherStartedSync();
-	void __fastcall WatcherValueChangedSync();
-
 public:		// User declarations
 	__fastcall TfmMain(TComponent* Owner);
 };
