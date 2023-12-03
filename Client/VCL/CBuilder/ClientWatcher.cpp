@@ -341,9 +341,6 @@ void __fastcall TClientWatcher::DoStarted()
 
 void __fastcall TClientWatcher::DoStopped()
 {
-	//Clients: TList<TGattClient>;
-	//Client: TGattClient;
-
 	CLIENTS_LIST* Clients = new CLIENTS_LIST();
 
 	EnterCriticalSection(&FConnectionsCS);

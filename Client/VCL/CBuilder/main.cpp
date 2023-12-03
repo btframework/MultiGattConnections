@@ -176,7 +176,10 @@ void __fastcall TfmMain::ManagerAfterOpenSync()
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::ManagerAfterOpen(TObject *Sender)
 {
-	TThread::Synchronize(NULL, ManagerAfterOpenSync);
+	if (MainThreadID == GetCurrentThreadId())
+		ManagerAfterOpenSync();
+	else
+		TThread::Synchronize(NULL, ManagerAfterOpenSync);
 }
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::ManagerBeforeCloseSync()
@@ -186,7 +189,10 @@ void __fastcall TfmMain::ManagerBeforeCloseSync()
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::ManagerBeforeClose(TObject *Sender)
 {
-	TThread::Synchronize(NULL, ManagerBeforeCloseSync);
+	if (MainThreadID == GetCurrentThreadId())
+		ManagerBeforeCloseSync();
+	else
+		TThread::Synchronize(NULL, ManagerBeforeCloseSync);
 }
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::ManagerClosedSync()
@@ -196,7 +202,10 @@ void __fastcall TfmMain::ManagerClosedSync()
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::ManagerClosed(TObject *Sender)
 {
-	TThread::Synchronize(NULL, ManagerClosedSync);
+	if (MainThreadID == GetCurrentThreadId())
+		ManagerClosedSync();
+	else
+		TThread::Synchronize(NULL, ManagerClosedSync);
 }
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::WatcherClientDisconnectedSync()
@@ -227,7 +236,11 @@ void __fastcall TfmMain::WatcherClientDisconnected(const __int64 Address,
 	{
 		FSyncAddress = Address;
 		FSyncResult = Reason;
-		TThread::Synchronize(NULL, WatcherClientDisconnectedSync);
+
+		if (MainThreadID == GetCurrentThreadId())
+			WatcherClientDisconnectedSync();
+		else
+			TThread::Synchronize(NULL, WatcherClientDisconnectedSync);
 	}
 	__finally
 	{
@@ -269,7 +282,11 @@ void __fastcall TfmMain::WatcherConnectionCompleted(const __int64 Address,
 	{
 		FSyncAddress = Address;
 		FSyncResult = Result;
-		TThread::Synchronize(NULL, WatcherConnectionCompletedSync);
+
+		if (MainThreadID == GetCurrentThreadId())
+			WatcherConnectionCompletedSync();
+		else
+			TThread::Synchronize(NULL, WatcherConnectionCompletedSync);
 	}
 	__finally
 	{
@@ -311,7 +328,11 @@ void __fastcall TfmMain::WatcherConnectionStarted(const __int64 Address,
 	{
 		FSyncAddress = Address;
 		FSyncResult = Result;
-		TThread::Synchronize(NULL, WatcherConnectionStartedSync);
+
+		if (MainThreadID == GetCurrentThreadId())
+			WatcherConnectionStartedSync();
+		else
+			TThread::Synchronize(NULL, WatcherConnectionStartedSync);
 	}
 	__finally
 	{
@@ -339,7 +360,11 @@ void __fastcall TfmMain::WatcherDeviceFound(const __int64 Address,
 	{
 		FSyncAddress = Address;
 		FSyncName = Name;
-		TThread::Synchronize(NULL, WatcherDeviceFoundSync);
+
+		if (MainThreadID == GetCurrentThreadId())
+			WatcherDeviceFoundSync();
+		else
+			TThread::Synchronize(NULL, WatcherDeviceFoundSync);
 	}
 	__finally
 	{
@@ -357,7 +382,10 @@ void __fastcall TfmMain::WatcherStoppedSync()
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::WatcherStopped(TObject* Sender)
 {
-	TThread::Synchronize(NULL, WatcherStoppedSync);
+	if (MainThreadID == GetCurrentThreadId())
+		WatcherStoppedSync();
+	else
+		TThread::Synchronize(NULL, WatcherStoppedSync);
 }
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::WatcherStartedSync()
@@ -368,7 +396,10 @@ void __fastcall TfmMain::WatcherStartedSync()
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::WatcherStarted(TObject* Sender)
 {
-	TThread::Synchronize(NULL, WatcherStartedSync);
+	if (MainThreadID == GetCurrentThreadId())
+		WatcherStartedSync();
+	else
+		TThread::Synchronize(NULL, WatcherStartedSync);
 }
 //---------------------------------------------------------------------------
 void __fastcall TfmMain::WatcherValueChangedSync()
@@ -392,7 +423,11 @@ void __fastcall TfmMain::WatcherValueChanged(const __int64 Address,
 	{
 		FSyncAddress = Address;
 		FSyncValue = Value;
-		TThread::Synchronize(NULL, WatcherValueChangedSync);
+
+		if (MainThreadID == GetCurrentThreadId())
+			WatcherValueChangedSync();
+		else
+			TThread::Synchronize(NULL, WatcherValueChangedSync);
 	}
 	__finally
 	{
