@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.34112.143
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MultiGatt", "MultiGatt.vcxproj", "{46A2042E-3393-4B25-BB4A-A7E7D72A7447}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{46A2042E-3393-4B25-BB4A-A7E7D72A7447}.Release|x86.ActiveCfg = Release|Win32
+		{46A2042E-3393-4B25-BB4A-A7E7D72A7447}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B9B2757C-F6B6-4D55-BA2A-3A42037556F0}
+	EndGlobalSection
+EndGlobal

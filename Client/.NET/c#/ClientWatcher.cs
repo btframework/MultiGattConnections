@@ -16,7 +16,7 @@ namespace MultiGatt
     internal sealed class ClientWatcher : wclBluetoothLeBeaconWatcher
     {
         private const String DEVICE_NAME = "MultyGattServer";
-
+        
         #region Connections management
         private Object FConnectionsCS;
         private List<GattClient> FConnections;

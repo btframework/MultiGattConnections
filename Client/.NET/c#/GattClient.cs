@@ -14,6 +14,7 @@ namespace MultiGatt
         private static readonly Guid NOTIFIABLE_CHARACTERISTIC_UUID = new Guid("eabbbb91-b7e5-4e50-b7aa-ced2be8dfbbe");
         private static readonly Guid READABLE_CHARACTERISTIC_UUID = new Guid("468dfe19-8de3-4181-b728-0902c50a5e6d");
         private static readonly Guid WRITABLE_CHARACTERISTIC_UUID = new Guid("421754b0-e70a-42c9-90ed-4aed82fa7ac0");
+
         #endregion Attribute UUIDs
 
         #region Private fields
